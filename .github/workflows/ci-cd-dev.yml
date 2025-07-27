@@ -1,1 +1,40 @@
-
+name: CI/CD Pipeline - Dev
+on:
+  push:
+    branches:
+      - dev
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Checkout configuration
+      uses: actions/checkout@v2
+      with:
+        repository: your-username/react-app-config
+        path: config
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+    - name: Install dependencies
+      run: npm install
+    - name: Build React app
+      run: npm run build
+    - name: Build Docker image
+      run: docker build -t my-react-app-dev:$GITHUB_SHA .
+    - name: Log in to Container Registry
+      run: echo ${{ secrets.CONTAINER_REGISTRY_PASSWORD }} | docker login myregistry.io -u ${{ secrets.CONTAINER_REGISTRY_USERNAME }} --password-stdin
+    - name: Push Docker image
+      run: docker push myregistry.io/my-docker-repo/my-react-app-dev:$GITHUB_SHA
+    - name: Deploy to AKS
+      uses: azure/aks-set-context@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        cluster-name: myAKSCluster
+        resource-group: myResourceGroup
+    - name: Apply Kubernetes manifest
+      run: |
+        kubectl apply -f config/dev/deployment.yaml
+        kubectl apply -f config/dev/service.yaml
