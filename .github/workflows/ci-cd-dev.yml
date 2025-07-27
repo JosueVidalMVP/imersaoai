@@ -1,5 +1,7 @@
 name: CI/CD Pipeline - Dev
 on:
+  workflow_dispatch:
+on:
   push:
     branches:
       - dev
